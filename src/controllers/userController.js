@@ -92,7 +92,7 @@ exports.updateUser = async (req, res) => {
 
 exports.updateUserPartially = async (req, res) => {
     try {
-        const user = await User.findByIdAndUpdate(req.params.user_id, req.body, { new: true });
+        const user = await User.findByIdAndUpdate(req.params._id, req.body, { new: true, overwrite: true });
         if (!user) {
             res.status(404).json({ message: 'Utilisateur non trouvé' });
             return;

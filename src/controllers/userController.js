@@ -1,9 +1,7 @@
-// controllers/userController.js
-
 const User = require('../models/userModel');
 const Timer = require('../models/timerModel');
 const jwt = require('jsonwebtoken');
-const bcrypt = require('bcrypt'); 
+const bcrypt = require('bcrypt');
 const saltRounds = 10;
 require('dotenv').config();
 const JWT_KEY = 'gfieznd';
@@ -17,10 +15,10 @@ exports.hashPassword = async (password) => {
     }
 };
 
-
 exports.userRegister = async (req, res) => {
     try {
         let newUser = new User(req.body);
+        newUser.password = await this.hashPassword(newUser.password);
         const user = await newUser.save();
         res.status(201).json({ message: `User créé : ${user.email}` });
     } catch (error) {
@@ -37,7 +35,9 @@ exports.loginRegister = async (req, res) => {
             return;
         }
 
-        if (user.email === req.body.email && user.password === req.body.password) {
+        const passwordMatch = await bcrypt.compare(req.body.password, user.password);
+
+        if (passwordMatch) {
             const userData = {
                 id: user._id,
                 email: user.email,
@@ -57,8 +57,8 @@ exports.loginRegister = async (req, res) => {
 
 exports.storeUserTime = async (req, res) => {
     try {
-        const {user_id} = req.params;
-        const {time} = req.body;
+        const { user_id } = req.params;
+        const { time } = req.body;
 
         const newTimer = new Timer({
             user_id,
@@ -73,8 +73,6 @@ exports.storeUserTime = async (req, res) => {
         res.status(500).json({ message: "Erreur serveur" });
     }
 };
-
-
 
 exports.updateUser = async (req, res) => {
     try {
@@ -107,11 +105,8 @@ exports.updateUserPartially = async (req, res) => {
 exports.deleteUser = async (req, res) => {
     try {
         await User.findByIdAndDelete(req.params._id);
-        res.status(200);
-        res.json({message: 'User supprimée'});
+        res.status(200).json({ message: 'Utilisateur supprimé' });
     } catch (error) {
-        res.status(500);
-        console.log(error);
-        res.json({ message: "Erreur serveur" })
+        res.status(500).json({ message: "Erreur serveur" });
     }
-}
+};

@@ -76,6 +76,11 @@ exports.storeUserTime = async (req, res) => {
 
 exports.updateUser = async (req, res) => {
     try {
+        // Si la mise à jour inclut un nouveau mot de passe, hashons-le avant de l'enregistrer dans la base de données
+        if (req.body.password) {
+            req.body.password = await bcrypt.hash(req.body.password, saltRounds);
+        }
+
         const user = await User.findByIdAndUpdate(req.params._id, req.body, { new: true });
         if (!user) {
             res.status(404).json({ message: 'Utilisateur non trouvé' });
@@ -90,6 +95,11 @@ exports.updateUser = async (req, res) => {
 
 exports.updateUserPartially = async (req, res) => {
     try {
+        // Si la mise à jour inclut un nouveau mot de passe, hashons-le avant de l'enregistrer dans la base de données
+        if (req.body.password) {
+            req.body.password = await bcrypt.hash(req.body.password, saltRounds);
+        }
+
         const user = await User.findByIdAndUpdate(req.params._id, req.body, { new: true, overwrite: true });
         if (!user) {
             res.status(404).json({ message: 'Utilisateur non trouvé' });

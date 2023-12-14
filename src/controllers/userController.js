@@ -1,9 +1,7 @@
-// controllers/userController.js
-
 const User = require('../models/userModel');
 const Timer = require('../models/timerModel');
 const jwt = require('jsonwebtoken');
-const bcrypt = require('bcrypt'); 
+const bcrypt = require('bcrypt');
 const saltRounds = 10;
 require('dotenv').config();
 const JWT_KEY = 'gfieznd';
@@ -17,10 +15,10 @@ exports.hashPassword = async (password) => {
     }
 };
 
-
 exports.userRegister = async (req, res) => {
     try {
         let newUser = new User(req.body);
+        newUser.password = await this.hashPassword(newUser.password);
         const user = await newUser.save();
         res.status(201).json({ message: `User créé : ${user.email}` });
     } catch (error) {
@@ -37,7 +35,9 @@ exports.loginRegister = async (req, res) => {
             return;
         }
 
-        if (user.email === req.body.email && user.password === req.body.password) {
+        const passwordMatch = await bcrypt.compare(req.body.password, user.password);
+
+        if (passwordMatch) {
             const userData = {
                 id: user._id,
                 email: user.email,
@@ -55,29 +55,13 @@ exports.loginRegister = async (req, res) => {
     }
 };
 
-exports.storeUserTime = async (req, res) => {
-    try {
-        const {user_id} = req.params;
-        const {time} = req.body;
-
-        const newTimer = new Timer({
-            user_id,
-            time,
-        });
-
-        await newTimer.save();
-
-        res.status(201).json({ message: "Temps de l'utilisateur enregistré avec succès" });
-    } catch (error) {
-        console.log(error);
-        res.status(500).json({ message: "Erreur serveur" });
-    }
-};
-
-
-
 exports.updateUser = async (req, res) => {
     try {
+        // Si la mise à jour inclut un nouveau mot de passe, hashons-le avant de l'enregistrer dans la base de données
+        if (req.body.password) {
+            req.body.password = await bcrypt.hash(req.body.password, saltRounds);
+        }
+
         const user = await User.findByIdAndUpdate(req.params._id, req.body, { new: true });
         if (!user) {
             res.status(404).json({ message: 'Utilisateur non trouvé' });
@@ -92,7 +76,12 @@ exports.updateUser = async (req, res) => {
 
 exports.updateUserPartially = async (req, res) => {
     try {
-        const user = await User.findByIdAndUpdate(req.params.user_id, req.body, { new: true });
+        // Si la mise à jour inclut un nouveau mot de passe, hashons-le avant de l'enregistrer dans la base de données
+        if (req.body.password) {
+            req.body.password = await bcrypt.hash(req.body.password, saltRounds);
+        }
+
+        const user = await User.findByIdAndUpdate(req.params._id, req.body, { new: true, overwrite: true });
         if (!user) {
             res.status(404).json({ message: 'Utilisateur non trouvé' });
             return;
@@ -107,11 +96,10 @@ exports.updateUserPartially = async (req, res) => {
 exports.deleteUser = async (req, res) => {
     try {
         await User.findByIdAndDelete(req.params._id);
-        res.status(200);
-        res.json({message: 'User supprimée'});
+        res.status(200).json({ message: 'Utilisateur supprimé' });
     } catch (error) {
-        res.status(500);
-        console.log(error);
-        res.json({ message: "Erreur serveur" })
+        res.status(500).json({ message: "Erreur serveur" });
     }
-}
+};
+
+

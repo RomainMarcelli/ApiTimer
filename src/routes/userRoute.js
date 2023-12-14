@@ -14,8 +14,5 @@ router.route("/:_id")
     .put(userController.updateUser)
     .patch(userController.updateUserPartially)
     .delete(userController.deleteUser);
-
-
-router.route("/:_id/timers").post(userController.storeUserTime);
-
+    
 module.exports = router;
